@@ -5,9 +5,10 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
-import 'package:pixeladventure/actors/player.dart';
-import 'package:pixeladventure/levels/level.dart';
+import 'package:pixeladventure/components/level.dart';
+import 'package:pixeladventure/components/player.dart';
 
 class PixelAdventure extends FlameGame with HasKeyboardHandlerComponents, DragCallbacks{
 
@@ -18,21 +19,39 @@ Player player = Player();
 late final world = Level(levelName: "Level-01", player: player);
 late JoystickComponent joystick;
 @override
-  FutureOr<void> onLoad() async {
-    //load into cache
-    await images.loadAllImages();
-    await images.load('HUD/knob.png');
+FutureOr<void> onLoad() async {
+  //load into cache
+  await images.loadAllImages();
+  await images.load('HUD/knob.png');
 
-    cam = CameraComponent.withFixedResolution( world: world, width: 640, height: 360);
-    cam.viewfinder.anchor = Anchor.topLeft;
+  cam = CameraComponent.withFixedResolution( world: world, width: 640, height: 360);
+  cam.viewfinder.anchor = Anchor.topLeft;
+  addJoystick();
+  addButton(); // Add this line to add the button
 
   await addAll([cam, world]);
 
-  addJoystick();
+  return super.onLoad();
+}
+
+void addButton() {
+  final button = SpriteButtonComponent(
+    
+    anchor: Anchor.bottomRight,
+    button: Sprite(images.fromCache('HUD/knob.png'),
+    srcPosition: Vector2(900 , 360 ),
+    ),
+    onPressed: () {
+      player.HasJumped=true; // Call the jump method of the player when the button is pressed
+    },
+    position: Vector2(600, 300), // Adjust the position of the button as needed
+  );
+
+  add(button);
+}
 
 
-    return super.onLoad();
-  }
+    
 
   @override
   void update(double dt) {
@@ -47,7 +66,7 @@ late JoystickComponent joystick;
 
     joystick=JoystickComponent(
     
-      priority: 1,
+      priority: 0,
       knob: SpriteComponent(
         sprite: Sprite(images.fromCache('HUD/knob.png')),
 
@@ -55,7 +74,7 @@ late JoystickComponent joystick;
       background: SpriteComponent(
         sprite: Sprite(images.fromCache('HUD/Joystick.png')),
       ),
-      margin: const EdgeInsets.only(left: 32, bottom: 32),
+      margin: const EdgeInsets.only(left: 32, bottom: 32,right: 30),
     );
   
      add(joystick);
@@ -64,23 +83,19 @@ late JoystickComponent joystick;
   void updateJoystick() {
     switch (joystick.direction) {
       case JoystickDirection.up:
-        player.playerdirection = PlayerDirection.up;
-        break;
-      case JoystickDirection.down:
-        player.playerdirection = PlayerDirection.down;
-        break;
+        player.HasJumped=true;
       case JoystickDirection.left:
       case JoystickDirection.upLeft:
       case JoystickDirection.downLeft:
-        player.playerdirection = PlayerDirection.left;
+        player.horizontalmvmnt = -1;
         break;
       case JoystickDirection.right:
       case JoystickDirection.upRight:
       case JoystickDirection.downRight:
-        player.playerdirection = PlayerDirection.right;
+       player.horizontalmvmnt = 1;
         break;
       case JoystickDirection.idle:
-        player.playerdirection = PlayerDirection.none;
+        player.horizontalmvmnt=0;        
         break;
       default:
     }
