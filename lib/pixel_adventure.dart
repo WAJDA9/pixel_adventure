@@ -23,6 +23,7 @@ FutureOr<void> onLoad() async {
   //load into cache
   await images.loadAllImages();
   await images.load('HUD/knob.png');
+  await images.load('BackGround/Gray.png');
 
   cam = CameraComponent.withFixedResolution( world: world, width: 640, height: 360);
   cam.viewfinder.anchor = Anchor.topLeft;
@@ -66,7 +67,7 @@ void addButton() {
 
     joystick=JoystickComponent(
     
-      priority: 0,
+      priority: 999,
       knob: SpriteComponent(
         sprite: Sprite(images.fromCache('HUD/knob.png')),
 
@@ -76,7 +77,7 @@ void addButton() {
       ),
       margin: const EdgeInsets.only(left: 32, bottom: 32,right: 30),
     );
-  
+
      add(joystick);
   }
   
@@ -95,7 +96,7 @@ void addButton() {
        player.horizontalmvmnt = 1;
         break;
       case JoystickDirection.idle:
-        player.horizontalmvmnt=0;        
+               
         break;
       default:
     }

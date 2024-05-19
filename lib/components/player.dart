@@ -9,7 +9,7 @@ import 'package:pixeladventure/components/utils.dart';
 
 import 'package:pixeladventure/pixel_adventure.dart';
 
-enum PlayerState { idle, run,jump,fall }
+enum PlayerState { idle, run,jump,fall,doublejump }
 class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventure>, KeyboardHandler{
   String character;
 
@@ -18,9 +18,10 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   late final SpriteAnimation run;
   late final SpriteAnimation jump;
   late final SpriteAnimation fall;
+  late final SpriteAnimation doublejump;
   final double stepTime=0.05;
   final double _gravity=9.8;
-  final double _jumpForce=350;
+  final double _jumpForce=380;
   final double _terminalVelocity=300;
   double horizontalmvmnt = 0;
   
@@ -29,6 +30,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   List<CollisionBlock> collisionBlocks=[];
   bool isOnGround=false;
   bool HasJumped=false;
+  bool hasdoubleJump=true;
 
   PlayerHitbox hitbox = PlayerHitbox(
     offsetX: 10,
@@ -67,7 +69,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
    horizontalmvmnt += isLeftKeyPressed ? -1 : 0; 
    horizontalmvmnt += isRightKeyPressed ? 1 : 0;
     HasJumped= keysPressed.contains(LogicalKeyboardKey.space) || keysPressed.contains(LogicalKeyboardKey.arrowUp) || keysPressed.contains(LogicalKeyboardKey.keyZ);
-
+    
    
 
     return super.onKeyEvent(event, keysPressed);
@@ -81,6 +83,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     run = _spriteanimation("Run", 12);
     jump = _spriteanimation("Jump", 1);
     fall = _spriteanimation("Fall", 1);
+    doublejump= _spriteanimation("Double Jump", 6);
 
     
     
@@ -90,6 +93,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
       PlayerState.run: run,
       PlayerState.jump: jump,
       PlayerState.fall: fall,
+      PlayerState.doublejump: doublejump,
     };
 
     //setting the current animations
@@ -113,7 +117,11 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
       playerstate = PlayerState.run;
     }
 
+      // if (!hasdoubleJump){
+      //   playerstate = PlayerState.doublejump;
+      // }
     if(velocity.y<0){
+    
       playerstate = PlayerState.jump;
     }
     if(velocity.y>_gravity){
@@ -129,7 +137,12 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     if(HasJumped && isOnGround){
       _playerJump(dt);
     }
-    
+    // if (!isOnGround && hasdoubleJump){
+    //   if (HasJumped){
+    //     hasdoubleJump=false;
+    //     _playerdoubleJump(dt);
+    //   }
+    // }
     velocity.x = horizontalmvmnt * movespeed;
     
     position.x += velocity.x * dt;
@@ -138,6 +151,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   void _checkhorizontalcollisions() {
     for (final block in collisionBlocks){
       if(checkCollision(this, block)){
+        if(!block.isPlatform){
           if(velocity.x>0){
             velocity.x = 0;
          position.x = block.x -hitbox.offsetX - hitbox.width;
@@ -146,6 +160,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
             velocity.x = 0;
          position.x = block.x + block.width + hitbox.width + hitbox.offsetX;
       }
+        }
       }
   }
   }
@@ -165,6 +180,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
            //comment this for quick sand
            position.y = block.y - hitbox.height - hitbox.offsetY;
             isOnGround=true;
+            // hasdoubleJump=true;
          }
         }
       }
@@ -175,6 +191,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
            //comment this for quick sand
            position.y = block.y - hitbox.height - hitbox.offsetY;
             isOnGround=true;
+            hasdoubleJump=true;
          }
          if(velocity.y<0){
            velocity.y = 0;
@@ -189,6 +206,14 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     velocity.y = -_jumpForce;
     position.y += velocity.y * dt;
     HasJumped = false;  
+    isOnGround = false;
+  }
+  
+  void _playerdoubleJump(double dt) {
+     velocity.y = -_jumpForce;
+    position.y += velocity.y * dt;
+    HasJumped = false; 
+     
     isOnGround = false;
   }
   
