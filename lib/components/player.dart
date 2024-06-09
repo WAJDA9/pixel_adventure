@@ -4,13 +4,14 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/services.dart';
 import 'package:pixeladventure/components/collision_block.dart';
-import 'package:pixeladventure/components/player_hitbox.dart';
+import 'package:pixeladventure/components/custom_hitbox.dart';
+import 'package:pixeladventure/components/fruit.dart';
 import 'package:pixeladventure/components/utils.dart';
 
 import 'package:pixeladventure/pixel_adventure.dart';
 
 enum PlayerState { idle, run,jump,fall,doublejump }
-class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventure>, KeyboardHandler{
+class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventure>, KeyboardHandler , CollisionCallbacks {
   String character;
 
   Player({position, this.character='Pink Man'}):super(position: position);
@@ -32,7 +33,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   bool HasJumped=false;
   bool hasdoubleJump=true;
 
-  PlayerHitbox hitbox = PlayerHitbox(
+  CustomHitbox hitbox = CustomHitbox(
     offsetX: 10,
     offsetY: 10,
     width: 12,
@@ -75,6 +76,14 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     return super.onKeyEvent(event, keysPressed);
   }
 
+
+@override
+  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+    if(other is Fruit){
+      other.collidingWithPlayer();
+    }
+    super.onCollision(intersectionPoints, other);
+  }
 
 
   

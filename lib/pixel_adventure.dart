@@ -10,20 +10,20 @@ import 'package:flutter/material.dart';
 import 'package:pixeladventure/components/level.dart';
 import 'package:pixeladventure/components/player.dart';
 
-class PixelAdventure extends FlameGame with HasKeyboardHandlerComponents, DragCallbacks{
+class PixelAdventure extends FlameGame with HasKeyboardHandlerComponents, DragCallbacks, HasCollisionDetection{
 
   @override
   Color backgroundColor() =>const Color(0xFF211F30);
 late final CameraComponent cam;
 Player player = Player();
-late final world = Level(levelName: "Level-01", player: player);
+late final world = Level(levelName: "Level-02", player: player);
 late JoystickComponent joystick;
 @override
 FutureOr<void> onLoad() async {
   //load into cache
   await images.loadAllImages();
   await images.load('HUD/knob.png');
-  await images.load('BackGround/Gray.png');
+  await images.load('BackGround/Blue.png');
 
   cam = CameraComponent.withFixedResolution( world: world, width: 640, height: 360);
   cam.viewfinder.anchor = Anchor.topLeft;
