@@ -6,6 +6,7 @@ import 'package:pixeladventure/components/background_tile.dart';
 import 'package:pixeladventure/components/collision_block.dart';
 import 'package:pixeladventure/components/fruit.dart';
 import 'package:pixeladventure/components/player.dart';
+import 'package:pixeladventure/components/saw.dart';
 import 'package:pixeladventure/pixel_adventure.dart';
 
 class Level extends World with HasGameRef<PixelAdventure> {
@@ -67,6 +68,19 @@ class Level extends World with HasGameRef<PixelAdventure> {
         case 'Fruit':
           final fruit= Fruit(fruit: spawnpoint.name, position: Vector2(spawnpoint.x,spawnpoint.y), size: Vector2(spawnpoint.width,spawnpoint.height));
           add(fruit);
+          break;
+        case 'Saw':
+        final bool isVertical=spawnpoint.properties.getValue('isVertical');
+        final double offneg=spawnpoint.properties.getValue('offneg');
+        final double offpos=spawnpoint.properties.getValue('offpos');
+          final saw= Saw(
+            size: Vector2(spawnpoint.width,spawnpoint.height), 
+            position: Vector2(spawnpoint.x,spawnpoint.y),
+            isVertical: isVertical,
+            offneg: offneg,
+            offpos: offpos,
+            );
+          add(saw);
           break;
         default:
       }

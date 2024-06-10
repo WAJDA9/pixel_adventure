@@ -6,32 +6,36 @@ import 'package:flutter/services.dart';
 import 'package:pixeladventure/components/collision_block.dart';
 import 'package:pixeladventure/components/custom_hitbox.dart';
 import 'package:pixeladventure/components/fruit.dart';
+import 'package:pixeladventure/components/saw.dart';
 import 'package:pixeladventure/components/utils.dart';
 
 import 'package:pixeladventure/pixel_adventure.dart';
 
-enum PlayerState { idle, run,jump,fall,doublejump }
+enum PlayerState { idle, run,jump,fall,doublejump,hit,appearing }
 class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventure>, KeyboardHandler , CollisionCallbacks {
   String character;
 
   Player({position, this.character='Pink Man'}):super(position: position);
-  late final SpriteAnimation idle;
-  late final SpriteAnimation run;
-  late final SpriteAnimation jump;
-  late final SpriteAnimation fall;
-  late final SpriteAnimation doublejump;
+  late final SpriteAnimation idleAnimation;
+  late final SpriteAnimation runAnimation;
+  late final SpriteAnimation jumpAnimation;
+  late final SpriteAnimation fallAnimation;
+  late final SpriteAnimation doublejumpAnimation;
+  late final SpriteAnimation hitAnimation;
+  late final SpriteAnimation appearingAnimation;
   final double stepTime=0.05;
   final double _gravity=9.8;
   final double _jumpForce=380;
   final double _terminalVelocity=300;
   double horizontalmvmnt = 0;
-  
+  Vector2 startingPos=Vector2.zero();
   double movespeed=100;
   Vector2 velocity = Vector2.zero();
   List<CollisionBlock> collisionBlocks=[];
   bool isOnGround=false;
   bool HasJumped=false;
   bool hasdoubleJump=true;
+  bool gotHit=false;
 
   CustomHitbox hitbox = CustomHitbox(
     offsetX: 10,
@@ -42,8 +46,8 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
 
   @override
   FutureOr<void> onLoad() {
-    _loadAnilations();
-   
+    _loadAnimations();
+   startingPos=position.clone();
     add(RectangleHitbox(
       size: Vector2(hitbox.width, hitbox.height),
       position: Vector2(hitbox.offsetX, hitbox.offsetY),
@@ -52,11 +56,13 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   }
   @override
   void update(double dt) {
-    _updateplayerstate();
+    if(!gotHit){
+      _updateplayerstate();
     _updateplayermovement(dt);
     _checkhorizontalcollisions();
     _applyGravity(dt);
     _checkVerticalCollisions();
+    }
     super.update(dt);
   }
 
@@ -77,36 +83,44 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   }
 
 
+
 @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if(other is Fruit){
       other.collidingWithPlayer();
+    }
+    if (other is Saw) {
+      _Respawn();
     }
     super.onCollision(intersectionPoints, other);
   }
 
 
   
-  void _loadAnilations() {
-    idle = _spriteanimation("Idle", 11);
-    run = _spriteanimation("Run", 12);
-    jump = _spriteanimation("Jump", 1);
-    fall = _spriteanimation("Fall", 1);
-    doublejump= _spriteanimation("Double Jump", 6);
+  void _loadAnimations() {
+    idleAnimation = _spriteanimation("Idle", 11);
+    runAnimation = _spriteanimation("Run", 12);
+    jumpAnimation = _spriteanimation("Jump", 1);
+    fallAnimation = _spriteanimation("Fall", 1);
+    doublejumpAnimation= _spriteanimation("Double Jump", 6);
+    hitAnimation= _spriteanimation("Hit", 7);
+    appearingAnimation= _specialspriteanimation("Appearing", 7);
 
     
     
     //List of all animations
     animations = {
-      PlayerState.idle: idle,
-      PlayerState.run: run,
-      PlayerState.jump: jump,
-      PlayerState.fall: fall,
-      PlayerState.doublejump: doublejump,
+      PlayerState.idle: idleAnimation,
+      PlayerState.run: runAnimation,
+      PlayerState.jump: jumpAnimation,
+      PlayerState.fall: fallAnimation,
+      PlayerState.doublejump: doublejumpAnimation,
+      PlayerState.hit: hitAnimation,
+      PlayerState.appearing: appearingAnimation,
     };
 
     //setting the current animations
-    current = PlayerState.run;
+    current = PlayerState.idle;
   }
 
   SpriteAnimation _spriteanimation(state, ammount){
@@ -115,6 +129,19 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
       stepTime: stepTime, 
       textureSize: Vector2(32, 32)));
   }
+  
+
+   SpriteAnimation _specialspriteanimation(state, ammount){
+    return SpriteAnimation.fromFrameData(game.images.fromCache("Main Characters/$state (96x96).png"), SpriteAnimationData.sequenced(
+      amount: ammount,
+      stepTime: stepTime, 
+      textureSize: Vector2(96,96))
+      
+      );
+  }
+
+
+
   void _updateplayerstate() {
     PlayerState playerstate= PlayerState.idle;
     if(velocity.x<0 && scale.x > 0){
@@ -224,6 +251,28 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     HasJumped = false; 
      
     isOnGround = false;
+  }
+  
+  void _Respawn() {
+    gotHit=true;
+    const hitduration = Duration(milliseconds: 350);
+    const appearingduration = Duration(milliseconds: 350);
+    const cantmoveduration = Duration(milliseconds: 400);
+   current=PlayerState.hit;
+   Future.delayed(hitduration, () {
+     scale.x=1;
+     position=startingPos - Vector2.all(32);
+     current=PlayerState.appearing; 
+     Future.delayed(appearingduration, () {
+       position=startingPos;
+       velocity=Vector2.zero();
+       _updateplayerstate();
+      Future.delayed(cantmoveduration, () {
+        gotHit=false;
+      });
+     });
+     }
+   );
   }
   
   
