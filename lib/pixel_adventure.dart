@@ -13,41 +13,26 @@ import 'package:pixeladventure/components/player.dart';
 class PixelAdventure extends FlameGame with HasKeyboardHandlerComponents, DragCallbacks, HasCollisionDetection{
 
   @override
-  Color backgroundColor() =>const Color(0xFF211F30);
-late final CameraComponent cam;
+Color backgroundColor() =>const Color(0xFF211F30);
+late  CameraComponent cam;
 Player player = Player();
-late final world = Level(levelName: "Level-01", player: player);
 late JoystickComponent joystick;
+var currentLevelIndex=1;
+
+
+
 @override
 FutureOr<void> onLoad() async {
   //load into cache
   await images.loadAllImages();
-
-  cam = CameraComponent.withFixedResolution( world: world, width: 640, height: 360);
-  cam.viewfinder.anchor = Anchor.topLeft;
+  _loadLevel();
   addJoystick();
-  addButton(); // Add this line to add the button
 
-  await addAll([cam, world]);
+  
 
   return super.onLoad();
 }
 
-void addButton() {
-  final button = SpriteButtonComponent(
-    
-    anchor: Anchor.bottomRight,
-    button: Sprite(images.fromCache('HUD/knob.png'),
-    srcPosition: Vector2(900 , 360 ),
-    ),
-    onPressed: () {
-      player.HasJumped=true; // Call the jump method of the player when the button is pressed
-    },
-    position: Vector2(600, 300), // Adjust the position of the button as needed
-  );
-
-  add(button);
-}
 
 
     
@@ -98,6 +83,22 @@ void addButton() {
         break;
       default:
     }
+  }
+
+  loadNextLevel() {
+    currentLevelIndex++;
+     _loadLevel();
+  }
+  
+  void _loadLevel()  {
+     Future.delayed(Duration(seconds: 1), (){
+        final world = Level(
+      levelName: "Level-0$currentLevelIndex", 
+      player: player);
+     cam = CameraComponent.withFixedResolution( world: world, width: 640, height: 360);
+      cam.viewfinder.anchor = Anchor.topLeft;
+      addAll([cam, world]);
+     });
   }
  
 }
