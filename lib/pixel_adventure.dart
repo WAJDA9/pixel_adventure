@@ -7,15 +7,18 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
+import 'package:pixeladventure/components/jump_button.dart';
 import 'package:pixeladventure/components/level.dart';
 import 'package:pixeladventure/components/player.dart';
 
-class PixelAdventure extends FlameGame with HasKeyboardHandlerComponents, DragCallbacks, HasCollisionDetection{
+class PixelAdventure extends FlameGame with HasKeyboardHandlerComponents, DragCallbacks, HasCollisionDetection , TapCallbacks {
 
   @override
 Color backgroundColor() =>const Color(0xFF211F30);
 late  CameraComponent cam;
+//pass player
 Player player = Player();
+bool showControls=true;
 late JoystickComponent joystick;
 var currentLevelIndex=1;
 
@@ -26,7 +29,10 @@ FutureOr<void> onLoad() async {
   //load into cache
   await images.loadAllImages();
   _loadLevel();
-  addJoystick();
+  if(showControls){
+    addJoystick();
+    add(JumpButton());
+  }
 
   
 
@@ -47,10 +53,8 @@ FutureOr<void> onLoad() async {
 
   
   void addJoystick() {
-
     joystick=JoystickComponent(
-    
-      priority: 999,
+        priority: 10,
       knob: SpriteComponent(
         sprite: Sprite(images.fromCache('HUD/knob.png')),
 
@@ -66,8 +70,6 @@ FutureOr<void> onLoad() async {
   
   void updateJoystick() {
     switch (joystick.direction) {
-      case JoystickDirection.up:
-        player.HasJumped=true;
       case JoystickDirection.left:
       case JoystickDirection.upLeft:
       case JoystickDirection.downLeft:
