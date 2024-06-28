@@ -19,7 +19,7 @@ class Level extends World with HasGameRef<PixelAdventure> {
 
   @override
   FutureOr<void> onLoad() async {
-  
+   priority = -1;
     level = await TiledComponent.load("$levelName.tmx", Vector2(16,16));
     add(level);
 
@@ -64,6 +64,7 @@ class Level extends World with HasGameRef<PixelAdventure> {
         case 'Player':
           
           player.position=Vector2(spawnpoint.x,spawnpoint.y);
+          player.scale.x=1;
           add(player);
           break;
         case 'Fruit':
@@ -95,20 +96,16 @@ class Level extends World with HasGameRef<PixelAdventure> {
   void _ScrollingBackGround() {
     final backgroundLayer=level.tileMap.getLayer('Background');
     
-    final numTilesY=(game.size.y/64).floor();
-        final numTilesX=(game.size.x/64).floor();
     if (backgroundLayer != null) {
       final backgroundColor=backgroundLayer.properties.getValue('BackgroundColor');
-      
-      for(double y =0;y<numTilesY;y++){
-        for (double x=0;x<numTilesX;x++){
-        final backgroundtile= BackgroundTile(
-        position: Vector2(x*64,y*64 - 64),
+       final backgroundtile= BackgroundTile(
+        position: Vector2(0,0),
         color: backgroundColor != null ? backgroundColor : 'Gray',
       );
+     
+       
       add(backgroundtile);
-      }
-      }
+      
       
       
     }

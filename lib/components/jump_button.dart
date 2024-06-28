@@ -12,7 +12,7 @@ class JumpButton extends SpriteComponent with HasGameRef<PixelAdventure>, TapCal
   FutureOr<void> onLoad() {
     sprite=Sprite(game.images.fromCache('HUD/Button.png'));
     position=Vector2(game.size.x -margin -buttonSize , game.size.y -margin -buttonSize);
-    priority=10;
+    priority=200;
     return super.onLoad();
   }
 

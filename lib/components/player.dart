@@ -27,7 +27,11 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   late final SpriteAnimation disappearingAnimation;
   final double stepTime=0.05;
   final double _gravity=9.8;
-  final double _jumpForce=380;
+  final double _jumpForce=240;
+  // for pc final double _jumpForce=380;
+
+  double fixedDeltaTime=1/60;
+  double accumulatedTime=0;
   final double _terminalVelocity=300;
   double horizontalmvmnt = 0;
   Vector2 startingPos=Vector2.zero();
@@ -47,6 +51,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     height: 20,
   );
 
+
   @override
   FutureOr<void> onLoad() {
     _loadAnimations();
@@ -59,13 +64,20 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   }
   @override
   void update(double dt) {
-    if(!gotHit && !reachedCheckpoint){
+    accumulatedTime += dt;
+    while (accumulatedTime >= fixedDeltaTime) {
+      if(!gotHit && !reachedCheckpoint){
       _updateplayerstate();
-    _updateplayermovement(dt);
+    _updateplayermovement(fixedDeltaTime);
     _checkhorizontalcollisions();
-    _applyGravity(dt);
+    _applyGravity(fixedDeltaTime);
     _checkVerticalCollisions();
     }
+      
+      accumulatedTime -= fixedDeltaTime;
+      
+    }
+    
     super.update(dt);
   }
 
@@ -85,10 +97,8 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     return super.onKeyEvent(event, keysPressed);
   }
 
-
-
 @override
-  void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (!reachedCheckpoint){
       if(other is Fruit){
       other.collidingWithPlayer();
@@ -102,8 +112,10 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     }
 
     }
-    super.onCollision(intersectionPoints, other);
+    
+    super.onCollisionStart(intersectionPoints, other);
   }
+
 
 
   
@@ -113,8 +125,8 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     jumpAnimation = _spriteanimation("Jump", 1);
     fallAnimation = _spriteanimation("Fall", 1);
     doublejumpAnimation= _spriteanimation("Double Jump", 6);
-    hitAnimation= _spriteanimation("Hit", 7);
-    appearingAnimation= _specialspriteanimation("Appearing", 7);
+    hitAnimation= _spriteanimation("Hit", 7)..loop=false;
+    appearingAnimation= _specialspriteanimation("Appearing", 7)..loop=false;
     disappearingAnimation= _specialspriteanimation("Desappearing", 7);
 
     
@@ -264,26 +276,28 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     isOnGround = false;
   }
   
-  void _Respawn() {
+  void _Respawn() async {
     gotHit=true;
-    const hitduration = Duration(milliseconds: 350);
-    const appearingduration = Duration(milliseconds: 350);
     const cantmoveduration = Duration(milliseconds: 400);
    current=PlayerState.hit;
-   Future.delayed(hitduration, () {
-     scale.x=1;
+await animationTicker?.completed;
+animationTicker?.reset();
+scale.x=1;
      position=startingPos - Vector2.all(32);
      current=PlayerState.appearing; 
-     Future.delayed(appearingduration, () {
+     await animationTicker?.completed;
+      animationTicker?.reset();
        position=startingPos;
        velocity=Vector2.zero();
        _updateplayerstate();
+
+
+ 
+      
       Future.delayed(cantmoveduration, () {
         gotHit=false;
       });
-     });
-     }
-   );
+    
   }
   
   void _reachedCheckpoint() {
@@ -298,6 +312,9 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     Future.delayed(Duration(milliseconds: 350), () {
       position=Vector2.all(-640);
       game.loadNextLevel();
+      current=PlayerState.idle;
+      position=startingPos;
+      reachedCheckpoint=false;
     });
   }
   
