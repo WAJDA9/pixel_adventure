@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:pixeladventure/components/custom_hitbox.dart';
 import 'package:pixeladventure/pixel_adventure.dart';
 
@@ -12,7 +13,7 @@ class Fruit extends SpriteAnimationComponent
       : super(position: position, size: size);
   final double stepTime = 0.05;
   final htibox = CustomHitbox(offsetX: 10, offsetY: 10, width: 12, height: 12);
-
+  bool collected=false;
   @override
   FutureOr<void> onLoad() {
     priority = -1;
@@ -29,7 +30,12 @@ class Fruit extends SpriteAnimationComponent
   }
 
   void collidingWithPlayer() async {
-    animation = SpriteAnimation.fromFrameData(
+   if (!collected){
+    collected=true;
+    if (game.playsounds){
+      FlameAudio.play('collect_fruit.wav', volume: game.volume);
+    }
+     animation = SpriteAnimation.fromFrameData(
       game.images.fromCache("Items/Fruits/Collected.png"),
       SpriteAnimationData.sequenced(
           amount: 6,
@@ -41,5 +47,6 @@ class Fruit extends SpriteAnimationComponent
     await animationTicker?.completed;
 
     removeFromParent();
+   }
   }
 }

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/flame.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/services.dart';
 import 'package:pixeladventure/components/checkpoint.dart';
 import 'package:pixeladventure/components/collision_block.dart';
@@ -101,10 +103,11 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (!reachedCheckpoint){
       if(other is Fruit){
+        game.fruitNum--;
       other.collidingWithPlayer();
     }
     if (other is Saw) {
-      _Respawn();
+      _respawn();
     }
     if(other is Checkpoint && !other.reachedCheckpoint){
       other.changeAnimation();
@@ -127,7 +130,7 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     doublejumpAnimation= _spriteanimation("Double Jump", 6);
     hitAnimation= _spriteanimation("Hit", 7)..loop=false;
     appearingAnimation= _specialspriteanimation("Appearing", 7)..loop=false;
-    disappearingAnimation= _specialspriteanimation("Desappearing", 7);
+    disappearingAnimation= _specialspriteanimation("Desappearing", 7)..loop=false;
 
     
     //List of all animations
@@ -262,6 +265,9 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
   }
   
   _playerJump(double dt) {
+    if (game.playsounds){
+      FlameAudio.play('jump.wav', volume: game.volume);
+    }
     velocity.y = -_jumpForce;
     position.y += velocity.y * dt;
     HasJumped = false;  
@@ -276,32 +282,35 @@ class Player extends SpriteAnimationGroupComponent with HasGameRef<PixelAdventur
     isOnGround = false;
   }
   
-  void _Respawn() async {
-    gotHit=true;
-    const cantmoveduration = Duration(milliseconds: 400);
-   current=PlayerState.hit;
-await animationTicker?.completed;
-animationTicker?.reset();
-scale.x=1;
-     position=startingPos - Vector2.all(32);
-     current=PlayerState.appearing; 
-     await animationTicker?.completed;
-      animationTicker?.reset();
-       position=startingPos;
-       velocity=Vector2.zero();
-       _updateplayerstate();
+   void _respawn() async {
+    if (game.playsounds) FlameAudio.play('hit.wav', volume: game.volume);
+    const canMoveDuration = Duration(milliseconds: 400);
+    gotHit = true;
+    current = PlayerState.hit;
 
+    await animationTicker?.completed;
+    animationTicker?.reset();
 
- 
-      
-      Future.delayed(cantmoveduration, () {
-        gotHit=false;
-      });
-    
+    scale.x = 1;
+    position = startingPos - Vector2.all(32);
+    current = PlayerState.appearing;
+
+    await animationTicker?.completed;
+    animationTicker?.reset();
+
+    velocity = Vector2.zero();
+    position = startingPos;
+    _updateplayerstate();
+    Future.delayed(canMoveDuration, () => gotHit = false);
   }
   
-  void _reachedCheckpoint() {
-    reachedCheckpoint=true;
+  void _reachedCheckpoint() async {
+    if (game.fruitNum==0){
+      reachedCheckpoint=true;
+    if (game.playsounds){
+      FlameAudio.play('disappear.wav', volume: game.volume);
+    }
+    
     if (scale.x > 0){
       position-= Vector2.all(32);
     }
@@ -309,13 +318,16 @@ scale.x=1;
       position += Vector2(32,-32);
     }
     current=PlayerState.disappearing;
-    Future.delayed(Duration(milliseconds: 350), () {
-      position=Vector2.all(-640);
-      game.loadNextLevel();
-      current=PlayerState.idle;
-      position=startingPos;
-      reachedCheckpoint=false;
-    });
+    await animationTicker?.completed;
+    animationTicker?.reset();
+   
+    reachedCheckpoint = false;
+    position = Vector2.all(-640);
+
+    const waitToChangeDuration = Duration(seconds: 3);
+    Future.delayed(waitToChangeDuration, () => game.loadNextLevel());
+
+    }
   }
   
   
